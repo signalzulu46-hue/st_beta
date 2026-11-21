@@ -1,3 +1,32 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="All Rights Reserved"
+
+[[mods]]
 modId="st_beta"
 version="1.0.0"
 displayName="ST beta"
+description='''
+Custom 3D GeckoLib laser weapon mod.
+'''
+
+[[dependencies.st_beta]]
+    modId="forge"
+    mandatory=true
+    versionRange="[47,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.st_beta]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.20.1,1.21)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.st_beta]]
+    modId="geckolib"
+    mandatory=true
+    versionRange="[4.4.9,)"
+    ordering="NONE"
+    side="BOTH"
