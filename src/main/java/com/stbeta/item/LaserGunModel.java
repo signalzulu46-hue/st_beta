@@ -7,7 +7,7 @@ public class LaserGunModel extends GeoModel<LaserGunItem> {
 
     @Override
     public ResourceLocation getModelResource(LaserGunItem animatable) {
-        return new ResourceLocation("st_beta", "geo/item/astro_k9_lazer.json");
+        return new ResourceLocation("st_beta", "geo/item/astro_k9_lazer.geo.json");
     }
 
     @Override
