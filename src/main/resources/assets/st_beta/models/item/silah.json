@@ -1,7 +1,31 @@
 {
-  "parent": "item/generated",
-  "textures": {
-    "layer0": "st_beta:item/silah"
+  "parent": "builtin/entity",
+  "gui_light": "front",
+  "display": {
+    "thirdperson_righthand": {
+      "translation":,
+      "scale":
+    },
+    "thirdperson_lefthand": {
+      "translation":,
+      "scale":
+    },
+    "firstperson_righthand": {
+      "translation":,
+      "scale":
+    },
+    "firstperson_lefthand": {
+      "translation":,
+      "scale":
+    },
+    "ground": {
+      "translation":,
+      "scale": [0.5, 0.5, 0.5]
+    },
+    "gui": {
+      "rotation":,
+      "translation":,
+      "scale": [0.625, 0.625, 0.625]
+    }
   }
 }
-
