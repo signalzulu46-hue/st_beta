@@ -1,0 +1,78 @@
+plugins {
+    id 'eclipse'
+    id 'idea'
+    id 'maven-publish'
+    id 'net.minecraftforge.gradle' version '[6.0,6.2)'
+}
+
+version = '1.0.0'
+group = 'com.stbeta'
+
+base {
+    archivesName = 'st_beta'
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+
+minecraft {
+    mappings channel: 'official', version: '1.20.1'
+    copyIdeResources = true
+
+    runs {
+        configureEach {
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+            mods {
+                st_beta {
+                    source sourceSets.main
+                }
+            }
+        }
+        client {
+            property 'forge.enabledGameTestNamespaces', 'st_beta'
+        }
+        server {
+            property 'forge.enabledGameTestNamespaces', 'st_beta'
+            args '--nogui'
+        }
+    }
+}
+
+repositories {
+    maven {
+        name = 'GeckoLib'
+        url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
+        content {
+            includeGroupByRegex("software\\.bernie.*")
+            includeGroup("com.eliotlash.mclib")
+        }
+    }
+}
+
+dependencies {
+    minecraft 'net.minecraftforge:forge:1.20.1-47.3.0'
+    implementation fg.deobf('software.bernie.geckolib:geckolib-forge-1.20.1:4.4.9')
+}
+
+tasks.named('processResources', ProcessResources).configure {
+    var replaceProperties = [
+            minecraft_version   : '1.20.1',
+            minecraft_version_range: '[1.20.1,1.21)',
+            forge_version       : '47.3.0',
+            forge_version_range : '[47,)',
+            loader_version_range: '[47,)',
+            mod_id              : 'st_beta',
+            mod_name            : 'ST beta',
+            mod_license         : 'All Rights Reserved',
+            mod_version         : '1.0.0',
+            mod_authors         : 'signalzulu46-hue',
+            mod_description     : 'Custom 3D GeckoLib laser weapon mod.'
+    ]
+    inputs.properties replaceProperties
+    filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
+        expand replaceProperties + [project: project]
+    }
+}
+
+jar.finalizedBy('reobfJar')
