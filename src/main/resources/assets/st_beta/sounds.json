@@ -1,5 +1,5 @@
 {
-  "lazer_ekleme": { "sounds": ["st_beta:lazer_ekleme"] },
-  "lazer_doldurma": { "sounds": ["st_beta:lazer_doldurma"] },
-  "lazer_ates": { "sounds": ["st_beta:lazer_ates"] }
+  "lazer_ekleme": { "category": "player", "sounds": [{ "name": "st_beta:lazer_ekleme", "stream": false }] },
+  "lazer_doldurma": { "category": "player", "sounds": [{ "name": "st_beta:lazer_doldurma", "stream": false }] },
+  "lazer_ates": { "category": "player", "sounds": [{ "name": "st_beta:lazer_ates", "stream": false }] }
 }
