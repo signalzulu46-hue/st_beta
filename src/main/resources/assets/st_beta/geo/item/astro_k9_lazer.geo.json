@@ -3,7 +3,7 @@
 	"minecraft:geometry": [
 		{
 			"description": {
-				"identifier": "geometry.gojidraw_astro_k_9",
+				"identifier": "geometry.astro_k9_lazer",
 				"texture_width": 512,
 				"texture_height": 512,
 				"visible_bounds_width": 14,
@@ -76,5 +76,7 @@
 				}
 			]
 		}
+	]
+}		}
 	]
 }

@@ -1,35 +1,7 @@
 {
-  "parent": "builtin/entity",
-  "gui_light": "front",
-  "display": {
-    "thirdperson_righthand": {
-      "translation": [0, -2.5, -2],
-      "scale": [0.3125, 0.29688, 0.34375]
-    },
-    "thirdperson_lefthand": {
-      "translation": [0, -2.5, -2],
-      "scale": [0.3125, 0.29688, 0.34375]
-    },
-    "firstperson_righthand": {
-      "translation": [0, 0, -2],
-      "scale": [0.3125, 0.29688, 0.34375]
-    },
-    "firstperson_lefthand": {
-      "translation": [0, 0, -2],
-      "scale": [0.3125, 0.29688, 0.34375]
-    },
-    "ground": {
-      "translation": [0, 0, -2],
-      "scale": [0.3125, 0.29688, 0.34375]
-    },
-    "gui": {
-      "rotation": [-162.5, 24.25, -180],
-      "translation": [-1.25, -3.5, -2],
-      "scale": [0.3125, 0.29688, 0.34375]
-    },
-    "fixed": {
-      "translation": [0, 0, -2],
-      "scale": [0.3125, 0.29688, 0.34375]
-    }
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "st_beta:item/silah"
   }
 }
+
