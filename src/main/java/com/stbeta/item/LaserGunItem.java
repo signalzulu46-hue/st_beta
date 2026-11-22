@@ -4,10 +4,13 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
@@ -55,29 +58,25 @@ public class LaserGunItem extends Item implements GeoItem {
     }
 
     @Override
-    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>(this, "controller", 2, state -> {
-            Player player = Minecraft.getInstance().player;
-            if (player != null && player.isShiftKeyDown() &&
-                    (player.getMainHandItem().getItem() == this || player.getOffhandItem().getItem() == this)) {
-                return state.setAndContinue(SHOOT_ANIM);
-            }
-            return state.setAndContinue(IDLE_ANIM);
-        }));
+    public int getUseDuration(ItemStack stack) {
+        return 72000;
     }
 
     @Override
-    public AnimatableInstanceCache getAnimatableInstanceCache() {
-        return cache;
+    public UseAnim getUseAnimation(ItemStack stack) {
+        return UseAnim.CROSSBOW;
     }
 
     @Override
-    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
-        if (level.isClientSide || !(entity instanceof Player player)) {
-            return;
-        }
+    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+        ItemStack stack = player.getItemInHand(hand);
+        player.startUsingItem(hand);
+        return InteractionResultHolder.consume(stack);
+    }
 
-        if (player.getMainHandItem() != stack || !player.isShiftKeyDown()) {
+    @Override
+    public void onUseTick(Level level, LivingEntity livingEntity, ItemStack stack, int remainingUseDuration) {
+        if (level.isClientSide || !(livingEntity instanceof Player player)) {
             return;
         }
 
@@ -85,8 +84,24 @@ public class LaserGunItem extends Item implements GeoItem {
             return;
         }
 
+        boolean hasMain = player.getMainHandItem().getItem() instanceof LaserGunItem;
+        boolean hasOff = player.getOffhandItem().getItem() instanceof LaserGunItem;
+
+        if (hasMain && hasOff) {
+            fireBeam(level, player, 0.35);
+            fireBeam(level, player, -0.35);
+        } else if (hasOff) {
+            fireBeam(level, player, -0.35);
+        } else {
+            fireBeam(level, player, 0.35);
+        }
+    }
+
+    private void fireBeam(Level level, Player player, double sideOffset) {
         Vec3 eyePos = player.getEyePosition(1.0F);
         Vec3 lookVec = player.getLookAngle();
+        Vec3 rightVec = lookVec.cross(new Vec3(0, 1, 0)).normalize();
+        Vec3 startPos = eyePos.add(rightVec.scale(sideOffset)).add(0, -0.2, 0);
         Vec3 endPos = eyePos.add(lookVec.scale(MAX_DISTANCE));
 
         BlockHitResult hitResult = level.clip(new ClipContext(
@@ -102,11 +117,11 @@ public class LaserGunItem extends Item implements GeoItem {
                 : endPos;
 
         if (level instanceof ServerLevel serverLevel) {
-            double distance = eyePos.distanceTo(hitPos);
+            double distance = startPos.distanceTo(hitPos);
             int steps = Math.min((int) (distance * 4), 120);
             for (int i = 1; i <= steps; i++) {
                 double t = (double) i / steps;
-                Vec3 p = eyePos.lerp(hitPos, t);
+                Vec3 p = startPos.lerp(hitPos, t);
                 serverLevel.sendParticles(
                         ParticleTypes.END_ROD,
                         p.x, p.y, p.z,
@@ -125,5 +140,22 @@ public class LaserGunItem extends Item implements GeoItem {
                     Level.ExplosionInteraction.MOB
             );
         }
+    }
+
+    @Override
+    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+        controllers.add(new AnimationController<>(this, "controller", 2, state -> {
+            Player player = Minecraft.getInstance().player;
+            if (player != null && player.isUsingItem() &&
+                    player.getUseItem().getItem() instanceof LaserGunItem) {
+                return state.setAndContinue(SHOOT_ANIM);
+            }
+            return state.setAndContinue(IDLE_ANIM);
+        }));
+    }
+
+    @Override
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
+        return cache;
     }
 }
