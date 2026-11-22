@@ -1,5 +1,6 @@
 package com.stbeta.item;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
@@ -55,9 +56,14 @@ public class LaserGunItem extends Item implements GeoItem {
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>(this, "controller", 0, state ->
-                state.setAndContinue(IDLE_ANIM)
-        ));
+        controllers.add(new AnimationController<>(this, "controller", 2, state -> {
+            Player player = Minecraft.getInstance().player;
+            if (player != null && player.isShiftKeyDown() &&
+                    (player.getMainHandItem().getItem() == this || player.getOffhandItem().getItem() == this)) {
+                return state.setAndContinue(SHOOT_ANIM);
+            }
+            return state.setAndContinue(IDLE_ANIM);
+        }));
     }
 
     @Override
