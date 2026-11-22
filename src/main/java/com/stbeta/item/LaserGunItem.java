@@ -2,18 +2,24 @@ package com.stbeta.item;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.BaseFireBlock;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
@@ -30,8 +36,9 @@ import java.util.function.Consumer;
 public class LaserGunItem extends Item implements GeoItem {
 
     private static final double MAX_DISTANCE = 35.0;
-    private static final float EXPLOSION_POWER = 2.0F;
-    private static final int FIRE_INTERVAL_TICKS = 6;
+    private static final float EXPLOSION_POWER = 1.8F;
+    private static final float DIRECT_DAMAGE = 6.0F;
+    private static final int FIRE_INTERVAL_TICKS = 2;
 
     private static final RawAnimation IDLE_ANIM = RawAnimation.begin().thenLoop("idle");
     private static final RawAnimation SHOOT_ANIM = RawAnimation.begin().thenLoop("shoot");
@@ -104,7 +111,7 @@ public class LaserGunItem extends Item implements GeoItem {
         Vec3 startPos = eyePos.add(rightVec.scale(sideOffset)).add(0, -0.2, 0);
         Vec3 endPos = eyePos.add(lookVec.scale(MAX_DISTANCE));
 
-        BlockHitResult hitResult = level.clip(new ClipContext(
+        BlockHitResult blockHit = level.clip(new ClipContext(
                 eyePos,
                 endPos,
                 ClipContext.Block.OUTLINE,
@@ -112,39 +119,23 @@ public class LaserGunItem extends Item implements GeoItem {
                 player
         ));
 
-        Vec3 hitPos = hitResult.getType() != HitResult.Type.MISS
-                ? hitResult.getLocation()
-                : endPos;
+        Vec3 hitPos = blockHit.getType() != HitResult.Type.MISS ? blockHit.getLocation() : endPos;
+        double maxHitDistSqr = eyePos.distanceToSqr(hitPos);
 
-        if (level instanceof ServerLevel serverLevel) {
-            double distance = startPos.distanceTo(hitPos);
-            int steps = Math.min((int) (distance * 4), 120);
-            for (int i = 1; i <= steps; i++) {
-                double t = (double) i / steps;
-                Vec3 p = startPos.lerp(hitPos, t);
-                serverLevel.sendParticles(
-                        ParticleTypes.END_ROD,
-                        p.x, p.y, p.z,
-                        1, 0.0, 0.0, 0.0, 0.0
-                );
-            }
-        }
+        AABB searchBox = player.getBoundingBox().expandTowards(lookVec.scale(MAX_DISTANCE)).inflate(1.0);
+        EntityHitResult entityHit = ProjectileUtil.getEntityHitResult(
+                level,
+                player,
+                eyePos,
+                hitPos,
+                searchBox,
+                e -> !e.isSpectator() && e.isPickable() && e != player,
+                0.35F
+        );
 
-        if (hitResult.getType() != HitResult.Type.MISS) {
-            level.explode(
-                    player,
-                    hitPos.x,
-                    hitPos.y,
-                    hitPos.z,
-                    EXPLOSION_POWER,
-                    Level.ExplosionInteraction.MOB
-            );
-        }
-    }
+        boolean didHit = blockHit.getType() != HitResult.Type.MISS;
 
-    @Override
-    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>(this, "controller", 2, state -> {
+        if (entityHit != null && eyePos.distanceToSqr(entityHit.getLocation()) (this, "controller", 2, state -> {
             Player player = Minecraft.getInstance().player;
             if (player != null && player.isUsingItem() &&
                     player.getUseItem().getItem() instanceof LaserGunItem) {
