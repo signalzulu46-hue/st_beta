@@ -2,6 +2,7 @@ package com.stbeta.item;
 import com.stbeta.client.*;
 import com.stbeta.init.ModSounds;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -35,7 +36,10 @@ public class LaserGunItem extends Item implements GeoItem {
     @Override public boolean shouldCauseReequipAnimation(ItemStack o, ItemStack n, boolean slotChanged) { return slotChanged; }
     @Override public void initializeClient(Consumer<IClientItemExtensions> c) {
         c.accept(new IClientItemExtensions() {
-            @Override public net.minecraft.client.model.HumanoidModel.ArmPose getArmPose(LivingEntity e, InteractionHand h, ItemStack s) { return ClientArmEvents.ZOMBIE_GUN_POSE; } @Override public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+            @Override public HumanoidModel.ArmPose getArmPose(LivingEntity e, InteractionHand h, ItemStack s) {
+                return ClientArmEvents.ZOMBIE_GUN_POSE;
+            }
+            @Override public BlockEntityWithoutLevelRenderer getCustomRenderer() {
                 if (renderer == null) renderer = new LaserGunRenderer();
                 return renderer;
             }
@@ -56,6 +60,58 @@ public class LaserGunItem extends Item implements GeoItem {
         if (h && !s) { if (idleSnd == null || idleSnd.isStopped()) { idleSnd = new LaserIdleSound(p); mc.getSoundManager().play(idleSnd); } }
         else if (idleSnd != null) { idleSnd.stopSound(); idleSnd = null; }
     }
+    @Override public InteractionResultHolder<ItemStack> use(Level l, Player p, InteractionHand h) {
+        if (l.isClientSide) { p.playSound(ModSounds.LAZER_DOLDURMA.get(), 1.0F, 1.0F); syncSounds(p); }
+        else l.playSound(null, p.getX(), p.getY(), p.getZ(), ModSounds.LAZER_DOLDURMA.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+        p.startUsingItem(h);
+        return InteractionResultHolder.consume(p.getItemInHand(h));
+    }
+    @Override public void onUseTick(Level l, LivingEntity e, ItemStack s, int rem) {
+        if (l.isClientSide) { if (e instanceof Player p) syncSounds(p); return; }
+        if (!(e instanceof Player p) || l.getGameTime() % 2 != 0) return;
+        long now = l.getGameTime();
+        long lastExp = p.getPersistentData().getLong("st_beta_last_exp");
+        boolean canExplode = (now - lastExp >= 100L);
+        if (canExplode) p.getPersistentData().putLong("st_beta_last_exp", now);
+        boolean m = p.getMainHandItem().getItem() instanceof LaserGunItem, o = p.getOffhandItem().getItem() instanceof LaserGunItem;
+        if (m && o) { fire(l, p, 0.35, canExplode); fire(l, p, -0.35, false); }
+        else fire(l, p, o ? -0.35 : 0.35, canExplode);
+    }
+    private void fire(Level l, Player p, double off, boolean canExplode) {
+        Vec3 eye = p.getEyePosition(1.0F), look = p.getLookAngle(), right = look.cross(new Vec3(0, 1, 0)).normalize();
+        Vec3 start = eye.add(right.scale(off)).add(0, -0.2, 0), end = eye.add(look.scale(35.0));
+        BlockHitResult bh = l.clip(new ClipContext(eye, end, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, p));
+        Vec3 hit = bh.getType() != HitResult.Type.MISS ? bh.getLocation() : end;
+        EntityHitResult eh = ProjectileUtil.getEntityHitResult(l, p, eye, hit, p.getBoundingBox().expandTowards(look.scale(35.0)).inflate(1.0), x -> !x.isSpectator() && x.isPickable() && x != p, 0.35F);
+        boolean ok = bh.getType() != HitResult.Type.MISS;
+        if (eh != null && eye.distanceToSqr(eh.getLocation()) < eye.distanceToSqr(hit)) {
+            hit = eh.getLocation(); ok = true; Entity t = eh.getEntity();
+            t.invulnerableTime = 0; t.setSecondsOnFire(8); t.hurt(l.damageSources().playerAttack(p), 6.0F);
+        }
+        if (l instanceof ServerLevel sl) {
+            int st = Math.min((int)(start.distanceTo(hit) * 4), 120);
+            for (int i = 1; i <= st; i++) { Vec3 pt = start.lerp(hit, (double)i/st); sl.sendParticles(ParticleTypes.FLAME, pt.x, pt.y, pt.z, 1, 0, 0, 0, 0); }
+        }
+        if (ok) {
+            BlockPos fp = BlockPos.containing(hit).above();
+            if (l.isEmptyBlock(fp) && BaseFireBlock.canBePlacedAt(l, fp, p.getDirection())) l.setBlockAndUpdate(fp, BaseFireBlock.getState(l, fp));
+            if (canExplode) {
+                l.explode(p, null, null, hit.x, hit.y, hit.z, 3.0F, true, Level.ExplosionInteraction.MOB);
+                for (LivingEntity near : l.getEntitiesOfClass(LivingEntity.class, new AABB(hit, hit).inflate(4.0))) {
+                    if (near != p) { near.invulnerableTime = 0; near.hurt(l.damageSources().explosion(p, p), 35.0F); }
+                }
+            }
+        }
+    }
+    @Override public void registerControllers(AnimatableManager.ControllerRegistrar c) {
+        c.add(new AnimationController<>(this, "controller", 2, s -> {
+            Player p = Minecraft.getInstance().player;
+            return s.setAndContinue(p != null && p.isUsingItem() && p.getUseItem().getItem() instanceof LaserGunItem ? SHOOT : IDLE);
+        }));
+    }
+    @Override public AnimatableInstanceCache getAnimatableInstanceCache() { return cache; }
+}
+cat << 'EOF' >> src/main/java/com/stbeta/item/LaserGunItem.java
     @Override public InteractionResultHolder<ItemStack> use(Level l, Player p, InteractionHand h) {
         if (l.isClientSide) { p.playSound(ModSounds.LAZER_DOLDURMA.get(), 1.0F, 1.0F); syncSounds(p); }
         else l.playSound(null, p.getX(), p.getY(), p.getZ(), ModSounds.LAZER_DOLDURMA.get(), SoundSource.PLAYERS, 1.0F, 1.0F);

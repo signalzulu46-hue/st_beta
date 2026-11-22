@@ -2,7 +2,6 @@ package com.stbeta.client;
 
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.world.entity.HumanoidArm;
-import net.minecraft.world.entity.LivingEntity;
 
 public class ClientArmEvents {
     public static final HumanoidModel.ArmPose ZOMBIE_GUN_POSE = HumanoidModel.ArmPose.create(
