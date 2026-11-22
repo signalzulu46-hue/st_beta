@@ -1,0 +1,5 @@
+{
+  "lazer_ekleme": { "sounds": ["st_beta:lazer_ekleme"] },
+  "lazer_doldurma": { "sounds": ["st_beta:lazer_doldurma"] },
+  "lazer_ates": { "sounds": ["st_beta:lazer_ates"] }
+}

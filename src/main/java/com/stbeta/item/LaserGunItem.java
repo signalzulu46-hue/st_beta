@@ -51,9 +51,9 @@ public class LaserGunItem extends Item implements GeoItem {
         boolean h = p.getMainHandItem().getItem() instanceof LaserGunItem || p.getOffhandItem().getItem() instanceof LaserGunItem;
         boolean s = p.isUsingItem() && p.getUseItem().getItem() instanceof LaserGunItem;
         if (s) { if (shootSnd == null || shootSnd.isStopped()) { shootSnd = new LaserShootSound(p); mc.getSoundManager().play(shootSnd); } }
-        else if (shootSnd != null) { shootSnd.stop(); shootSnd = null; }
+        else if (shootSnd != null) { shootSnd.stopSound(); shootSnd = null; }
         if (h && !s) { if (idleSnd == null || idleSnd.isStopped()) { idleSnd = new LaserIdleSound(p); mc.getSoundManager().play(idleSnd); } }
-        else if (idleSnd != null) { idleSnd.stop(); idleSnd = null; }
+        else if (idleSnd != null) { idleSnd.stopSound(); idleSnd = null; }
     }
     @Override public InteractionResultHolder<ItemStack> use(Level l, Player p, InteractionHand h) {
         if (!l.isClientSide) l.playSound(null, p.getX(), p.getY(), p.getZ(), ModSounds.LAZER_DOLDURMA.get(), SoundSource.PLAYERS, 1.0F, 1.0F);

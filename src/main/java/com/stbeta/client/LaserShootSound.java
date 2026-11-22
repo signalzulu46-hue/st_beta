@@ -1,8 +1,7 @@
 package com.stbeta.client;
 import com.stbeta.init.ModSounds;
 import com.stbeta.item.LaserGunItem;
-import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
-import net.minecraft.client.resources.sounds.SoundInstance;
+import net.minecraft.client.resources.sounds.*;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
 public class LaserShootSound extends AbstractTickableSoundInstance {
@@ -11,6 +10,7 @@ public class LaserShootSound extends AbstractTickableSoundInstance {
         super(ModSounds.LAZER_ATES.get(), SoundSource.PLAYERS, SoundInstance.createUnseededRandom());
         this.p = p; this.looping = true; this.volume = 1.0F;
     }
+    public void stopSound() { this.stop(); }
     @Override public void tick() {
         if (p == null || !p.isAlive() || p.isRemoved()) { stop(); return; }
         boolean s = p.isUsingItem() && p.getUseItem().getItem() instanceof LaserGunItem;
