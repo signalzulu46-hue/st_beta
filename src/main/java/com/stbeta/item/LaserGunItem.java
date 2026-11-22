@@ -34,7 +34,7 @@ public class LaserGunItem extends Item implements GeoItem {
     public LaserGunItem(Properties p) { super(p); SingletonGeoAnimatable.registerSyncedAnimatable(this); }
     @Override public void initializeClient(Consumer<IClientItemExtensions> c) {
         c.accept(new IClientItemExtensions() {
-            @Override public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+            @Override public net.minecraft.client.model.HumanoidModel.ArmPose getArmPose(net.minecraft.world.entity.LivingEntity e, InteractionHand h, ItemStack s) { return net.minecraft.client.model.HumanoidModel.ArmPose.ITEM; } @Override public BlockEntityWithoutLevelRenderer getCustomRenderer() {
                 if (renderer == null) renderer = new LaserGunRenderer();
                 return renderer;
             }
