@@ -1,10 +1,14 @@
 package com.stbeta.item;
 
+import com.stbeta.client.LaserIdleSound;
+import com.stbeta.client.LaserShootSound;
+import com.stbeta.init.ModSounds;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
@@ -22,6 +26,8 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.animatable.SingletonGeoAnimatable;
@@ -45,6 +51,12 @@ public class LaserGunItem extends Item implements GeoItem {
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     private LaserGunRenderer renderer;
+
+    @OnlyIn(Dist.CLIENT)
+    private static LaserIdleSound activeIdleSound;
+
+    @OnlyIn(Dist.CLIENT)
+    private static LaserShootSound activeShootSound;
 
     public LaserGunItem(Properties properties) {
         super(properties);
@@ -75,21 +87,63 @@ public class LaserGunItem extends Item implements GeoItem {
     }
 
     @Override
+    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
+        if (level.isClientSide && entity instanceof Player player) {
+            handleClientSounds(player);
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    private static void handleClientSounds(Player player) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player != player) return;
+
+        boolean holdingGun = player.getMainHandItem().getItem() instanceof LaserGunItem
+                || player.getOffhandItem().getItem() instanceof LaserGunItem;
+        boolean isShooting = player.isUsingItem()
+                && player.getUseItem().getItem() instanceof LaserGunItem;
+
+        if (isShooting) {
+            if (activeShootSound == null || activeShootSound.isStopped() || !mc.getSoundManager().isActive(activeShootSound)) {
+                activeShootSound = new LaserShootSound(player);
+                mc.getSoundManager().play(activeShootSound);
+            }
+        } else if (activeShootSound != null && !activeShootSound.isStopped()) {
+            activeShootSound.stop();
+            activeShootSound = null;
+        }
+
+        if (holdingGun && !isShooting) {
+            if (activeIdleSound == null || activeIdleSound.isStopped() || !mc.getSoundManager().isActive(activeIdleSound)) {
+                activeIdleSound = new LaserIdleSound(player);
+                mc.getSoundManager().play(activeIdleSound);
+            }
+        } else if (activeIdleSound != null && !activeIdleSound.isStopped()) {
+            activeIdleSound.stop();
+            activeIdleSound = null;
+        }
+    }
+
+    @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
+        if (!level.isClientSide) {
+            level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                    ModSounds.LAZER_DOLDURMA.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+        }
         player.startUsingItem(hand);
+        if (level.isClientSide) handleClientSounds(player);
         return InteractionResultHolder.consume(stack);
     }
 
     @Override
     public void onUseTick(Level level, LivingEntity livingEntity, ItemStack stack, int remainingUseDuration) {
-        if (level.isClientSide || !(livingEntity instanceof Player player)) {
+        if (level.isClientSide) {
+            if (livingEntity instanceof Player player) handleClientSounds(player);
             return;
         }
-
-        if (level.getGameTime() % FIRE_INTERVAL_TICKS != 0) {
-            return;
-        }
+        if (!(livingEntity instanceof Player player)) return;
+        if (level.getGameTime() % FIRE_INTERVAL_TICKS != 0) return;
 
         boolean hasMain = player.getMainHandItem().getItem() instanceof LaserGunItem;
         boolean hasOff = player.getOffhandItem().getItem() instanceof LaserGunItem;
@@ -112,29 +166,16 @@ public class LaserGunItem extends Item implements GeoItem {
         Vec3 endPos = eyePos.add(lookVec.scale(MAX_DISTANCE));
 
         BlockHitResult blockHit = level.clip(new ClipContext(
-                eyePos,
-                endPos,
-                ClipContext.Block.OUTLINE,
-                ClipContext.Fluid.NONE,
-                player
-        ));
-
+                eyePos, endPos, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player));
         Vec3 hitPos = blockHit.getType() != HitResult.Type.MISS ? blockHit.getLocation() : endPos;
         double maxHitDistSqr = eyePos.distanceToSqr(hitPos);
 
         AABB searchBox = player.getBoundingBox().expandTowards(lookVec.scale(MAX_DISTANCE)).inflate(1.0);
         EntityHitResult entityHit = ProjectileUtil.getEntityHitResult(
-                level,
-                player,
-                eyePos,
-                hitPos,
-                searchBox,
-                e -> !e.isSpectator() && e.isPickable() && e != player,
-                0.35F
-        );
+                level, player, eyePos, hitPos, searchBox,
+                e -> !e.isSpectator() && e.isPickable() && e != player, 0.35F);
 
         boolean didHit = blockHit.getType() != HitResult.Type.MISS;
-
         if (entityHit != null && eyePos.distanceToSqr(entityHit.getLocation()) (this, "controller", 2, state -> {
             Player player = Minecraft.getInstance().player;
             if (player != null && player.isUsingItem() &&
