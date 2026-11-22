@@ -35,7 +35,7 @@ public class LaserGunItem extends Item implements GeoItem {
     @Override public boolean shouldCauseReequipAnimation(ItemStack o, ItemStack n, boolean slotChanged) { return slotChanged; }
     @Override public void initializeClient(Consumer<IClientItemExtensions> c) {
         c.accept(new IClientItemExtensions() {
-            @Override public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+            @Override public net.minecraft.client.model.HumanoidModel.ArmPose getArmPose(LivingEntity e, InteractionHand h, ItemStack s) { return ClientArmEvents.ZOMBIE_GUN_POSE; } @Override public BlockEntityWithoutLevelRenderer getCustomRenderer() {
                 if (renderer == null) renderer = new LaserGunRenderer();
                 return renderer;
             }

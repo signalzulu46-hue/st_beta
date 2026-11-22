@@ -1,32 +1,24 @@
 package com.stbeta.client;
-import com.stbeta.item.LaserGunItem;
-import net.minecraft.client.model.PlayerModel;
-import net.minecraft.client.player.AbstractClientPlayer;
-import net.minecraft.world.entity.HumanoidArm;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderLivingEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
-@Mod.EventBusSubscriber(modid = "st_beta", value = Dist.CLIENT)
+import net.minecraft.client.model.HumanoidModel;
+import net.minecraft.world.entity.HumanoidArm;
+import net.minecraft.world.entity.LivingEntity;
+
 public class ClientArmEvents {
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onRenderPlayer(RenderLivingEvent.Pre<AbstractClientPlayer, ?> event) {
-        if (!(event.getEntity() instanceof AbstractClientPlayer p)) return;
-        if (!(event.getRenderer().getModel() instanceof PlayerModel<?> m)) return;
-        boolean main = p.getMainHandItem().getItem() instanceof LaserGunItem;
-        boolean off = p.getOffhandItem().getItem() instanceof LaserGunItem;
-        if (!main && !off) return;
-        boolean rightMain = p.getMainArm() == HumanoidArm.RIGHT;
-        float zombiePitch = (float) Math.toRadians(p.getXRot()) - 1.5708F;
-        if ((main && rightMain) || (off && !rightMain)) {
-            m.rightArm.xRot = zombiePitch; m.rightArm.yRot = 0.0F; m.rightArm.zRot = 0.0F;
-            m.rightSleeve.copyFrom(m.rightArm);
-        }
-        if ((main && !rightMain) || (off && rightMain)) {
-            m.leftArm.xRot = zombiePitch; m.leftArm.yRot = 0.0F; m.leftArm.zRot = 0.0F;
-            m.leftSleeve.copyFrom(m.leftArm);
-        }
-    }
+    public static final HumanoidModel.ArmPose ZOMBIE_GUN_POSE = HumanoidModel.ArmPose.create(
+            "ST_BETA_ZOMBIE_GUN",
+            false,
+            (model, entity, arm) -> {
+                float pitch = (float) Math.toRadians(entity.getXRot()) - 1.5708F;
+                if (arm == HumanoidArm.RIGHT) {
+                    model.rightArm.xRot = pitch;
+                    model.rightArm.yRot = 0.0F;
+                    model.rightArm.zRot = 0.0F;
+                } else {
+                    model.leftArm.xRot = pitch;
+                    model.leftArm.yRot = 0.0F;
+                    model.leftArm.zRot = 0.0F;
+                }
+            }
+    );
 }

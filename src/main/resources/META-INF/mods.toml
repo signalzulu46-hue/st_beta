@@ -1,6 +1,7 @@
 modLoader="javafml"
 loaderVersion="[47,)"
 license="All Rights Reserved"
+issueTrackerURL="https://github.com"
 
 [[mods]]
 modId="st_beta"
@@ -9,9 +10,9 @@ displayName="ST beta"
 displayURL="https://github.com"
 logoFile="logo.png"
 authors="SignalZulu"
-credits="SignalZulu - GitHub: https://github.com"
+credits="GitHub: https://github.com | YouTube: https://youtube.com"
 description='''
-Mod daha gelistirme asamasindadir. Yeni haberler icin YouTube kanalina (https://youtube.com) veya Discord sunucusuna (https://discord.gg) bakabilirsiniz.
+Mod daha gelistirme asamasindadir. Yeni haberler icin YouTube kanalina (https://youtube.com?si=xuG0TXPq0a_eLUh9) veya Discord sunucusuna (https://discord.gg) bakabilirsiniz.
 '''
 
 [[dependencies.st_beta]]
