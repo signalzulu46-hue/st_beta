@@ -36,25 +36,20 @@ import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
-
 import java.util.function.Consumer;
 
 public class LaserGunItem extends Item implements GeoItem {
-
     private static final double MAX_DISTANCE = 35.0;
     private static final float EXPLOSION_POWER = 1.8F;
     private static final float DIRECT_DAMAGE = 6.0F;
     private static final int FIRE_INTERVAL_TICKS = 2;
-
     private static final RawAnimation IDLE_ANIM = RawAnimation.begin().thenLoop("idle");
     private static final RawAnimation SHOOT_ANIM = RawAnimation.begin().thenLoop("shoot");
-
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     private LaserGunRenderer renderer;
 
     @OnlyIn(Dist.CLIENT)
     private static LaserIdleSound activeIdleSound;
-
     @OnlyIn(Dist.CLIENT)
     private static LaserShootSound activeShootSound;
 
@@ -68,42 +63,32 @@ public class LaserGunItem extends Item implements GeoItem {
         consumer.accept(new IClientItemExtensions() {
             @Override
             public BlockEntityWithoutLevelRenderer getCustomRenderer() {
-                if (LaserGunItem.this.renderer == null) {
-                    LaserGunItem.this.renderer = new LaserGunRenderer();
-                }
+                if (LaserGunItem.this.renderer == null) LaserGunItem.this.renderer = new LaserGunRenderer();
                 return LaserGunItem.this.renderer;
             }
         });
     }
 
     @Override
-    public int getUseDuration(ItemStack stack) {
-        return 72000;
-    }
+    public int getUseDuration(ItemStack stack) { return 72000; }
 
     @Override
-    public UseAnim getUseAnimation(ItemStack stack) {
-        return UseAnim.CROSSBOW;
-    }
+    public UseAnim getUseAnimation(ItemStack stack) { return UseAnim.CROSSBOW; }
 
     @Override
     public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
-        if (level.isClientSide && entity instanceof Player player) {
-            handleClientSounds(player);
-        }
+        if (level.isClientSide && entity instanceof Player player) handleClientSounds(player);
     }
 
     @OnlyIn(Dist.CLIENT)
     private static void handleClientSounds(Player player) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != player) return;
-
-        boolean holdingGun = player.getMainHandItem().getItem() instanceof LaserGunItem
+        boolean holding = player.getMainHandItem().getItem() instanceof LaserGunItem
                 || player.getOffhandItem().getItem() instanceof LaserGunItem;
-        boolean isShooting = player.isUsingItem()
-                && player.getUseItem().getItem() instanceof LaserGunItem;
+        boolean shooting = player.isUsingItem() && player.getUseItem().getItem() instanceof LaserGunItem;
 
-        if (isShooting) {
+        if (shooting) {
             if (activeShootSound == null || activeShootSound.isStopped() || !mc.getSoundManager().isActive(activeShootSound)) {
                 activeShootSound = new LaserShootSound(player);
                 mc.getSoundManager().play(activeShootSound);
@@ -113,7 +98,7 @@ public class LaserGunItem extends Item implements GeoItem {
             activeShootSound = null;
         }
 
-        if (holdingGun && !isShooting) {
+        if (holding && !shooting) {
             if (activeIdleSound == null || activeIdleSound.isStopped() || !mc.getSoundManager().isActive(activeIdleSound)) {
                 activeIdleSound = new LaserIdleSound(player);
                 mc.getSoundManager().play(activeIdleSound);
@@ -147,7 +132,6 @@ public class LaserGunItem extends Item implements GeoItem {
 
         boolean hasMain = player.getMainHandItem().getItem() instanceof LaserGunItem;
         boolean hasOff = player.getOffhandItem().getItem() instanceof LaserGunItem;
-
         if (hasMain && hasOff) {
             fireBeam(level, player, 0.35);
             fireBeam(level, player, -0.35);
@@ -187,7 +171,5 @@ public class LaserGunItem extends Item implements GeoItem {
     }
 
     @Override
-    public AnimatableInstanceCache getAnimatableInstanceCache() {
-        return cache;
-    }
+    public AnimatableInstanceCache getAnimatableInstanceCache() { return cache; }
 }
