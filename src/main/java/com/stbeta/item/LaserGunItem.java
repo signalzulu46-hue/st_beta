@@ -32,9 +32,10 @@ public class LaserGunItem extends Item implements GeoItem {
     @OnlyIn(Dist.CLIENT) private static LaserShootSound shootSnd;
 
     public LaserGunItem(Properties p) { super(p); SingletonGeoAnimatable.registerSyncedAnimatable(this); }
+    @Override public boolean shouldCauseReequipAnimation(ItemStack o, ItemStack n, boolean slotChanged) { return slotChanged; }
     @Override public void initializeClient(Consumer<IClientItemExtensions> c) {
         c.accept(new IClientItemExtensions() {
-            @Override public net.minecraft.client.model.HumanoidModel.ArmPose getArmPose(net.minecraft.world.entity.LivingEntity e, InteractionHand h, ItemStack s) { return net.minecraft.client.model.HumanoidModel.ArmPose.ITEM; } @Override public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+            @Override public BlockEntityWithoutLevelRenderer getCustomRenderer() {
                 if (renderer == null) renderer = new LaserGunRenderer();
                 return renderer;
             }
@@ -64,10 +65,12 @@ public class LaserGunItem extends Item implements GeoItem {
     @Override public void onUseTick(Level l, LivingEntity e, ItemStack s, int rem) {
         if (l.isClientSide) { if (e instanceof Player p) syncSounds(p); return; }
         if (!(e instanceof Player p) || l.getGameTime() % 2 != 0) return;
-        int usedTicks = getUseDuration(s) - rem;
-        boolean canExplode = (usedTicks % 100 == 0);
+        long now = l.getGameTime();
+        long lastExp = p.getPersistentData().getLong("st_beta_last_exp");
+        boolean canExplode = (now - lastExp >= 100L);
+        if (canExplode) p.getPersistentData().putLong("st_beta_last_exp", now);
         boolean m = p.getMainHandItem().getItem() instanceof LaserGunItem, o = p.getOffhandItem().getItem() instanceof LaserGunItem;
-        if (m && o) { fire(l, p, 0.35, canExplode); fire(l, p, -0.35, canExplode); }
+        if (m && o) { fire(l, p, 0.35, canExplode); fire(l, p, -0.35, false); }
         else fire(l, p, o ? -0.35 : 0.35, canExplode);
     }
     private void fire(Level l, Player p, double off, boolean canExplode) {
@@ -88,7 +91,12 @@ public class LaserGunItem extends Item implements GeoItem {
         if (ok) {
             BlockPos fp = BlockPos.containing(hit).above();
             if (l.isEmptyBlock(fp) && BaseFireBlock.canBePlacedAt(l, fp, p.getDirection())) l.setBlockAndUpdate(fp, BaseFireBlock.getState(l, fp));
-            if (canExplode) l.explode(p, null, null, hit.x, hit.y, hit.z, 20.0F, true, Level.ExplosionInteraction.MOB);
+            if (canExplode) {
+                l.explode(p, null, null, hit.x, hit.y, hit.z, 3.0F, true, Level.ExplosionInteraction.MOB);
+                for (LivingEntity near : l.getEntitiesOfClass(LivingEntity.class, new AABB(hit, hit).inflate(4.0))) {
+                    if (near != p) { near.invulnerableTime = 0; near.hurt(l.damageSources().explosion(p, p), 35.0F); }
+                }
+            }
         }
     }
     @Override public void registerControllers(AnimatableManager.ControllerRegistrar c) {

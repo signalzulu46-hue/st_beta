@@ -6,8 +6,12 @@ license="All Rights Reserved"
 modId="st_beta"
 version="1.0.0"
 displayName="ST beta"
+displayURL="https://github.com/signalzulu46-hue/st_beta"
+logoFile="logo.png"
+authors="SignalZulu"
+credits="SignalZulu - GitHub: https://github.com/signalzulu46-hue/st_beta"
 description='''
-Custom 3D GeckoLib laser weapon mod.
+Mod daha gelistirme asamasindadir. Yeni haberler icin YouTube kanalina (https://youtube.com/@signalzulu?si=xuG0TXPq0a_eLUh9) veya Discord sunucusuna (https://discord.gg) bakabilirsiniz.
 '''
 
 [[dependencies.st_beta]]
@@ -28,5 +32,12 @@ Custom 3D GeckoLib laser weapon mod.
     modId="geckolib"
     mandatory=true
     versionRange="[4.4.9,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.st_beta]]
+    modId="blockbuster"
+    mandatory=true
+    versionRange="[1.0,)"
     ordering="NONE"
     side="BOTH"
